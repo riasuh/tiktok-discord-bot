@@ -2,7 +2,6 @@ const axios = require("axios");
 const fs = require("fs");
 const path = require("path");
 
-// Config from env vars
 const username = process.env.TIKTOK_USERNAME || "avamaxsucks";
 const webhook = process.env.DISCORD_WEBHOOK;
 
@@ -18,14 +17,31 @@ async function main() {
     const res = await axios.get(`https://www.tiktok.com/@${username}`, {
       headers: {
         "User-Agent": "Mozilla/5.0",
+        "Accept-Language": "en-US,en;q=0.9",
       },
     });
 
-    const match = res.data.match(/"videoId":"(\d+)"/);
-    const videoId = match ? match[1] : null;
+    // Extract JSON blob inside <script id="SIGI_STATE">
+    const jsonMatch = res.data.match(/<script id="SIGI_STATE" type="application\/json">([^<]+)<\/script>/);
+    if (!jsonMatch) {
+      console.log("❌ Could not find SIGI_STATE JSON in page");
+      return;
+    }
+
+    const data = JSON.parse(jsonMatch[1]);
+
+    // Navigate JSON to find latest video ID
+    // Path: data.ItemList -> [username] -> items -> first video ID
+    const userItems = data.ItemList?.user?.[`@${username}`]?.list;
+    if (!userItems || userItems.length === 0) {
+      console.log("❌ No videos found for user in JSON data");
+      return;
+    }
+
+    const videoId = userItems[0];
 
     if (!videoId) {
-      console.log("No video ID found");
+      console.log("❌ Video ID not found");
       return;
     }
 
@@ -41,12 +57,10 @@ async function main() {
       return;
     }
 
-    // Save new videoId for next runs
     fs.writeFileSync(checkpointFile, videoId, "utf8");
 
     const proxyLink = `https://vm.tiktokez.com/${videoId}`;
 
-    // Send Discord message
     const payload = {
       embeds: [
         {
@@ -61,7 +75,7 @@ async function main() {
     const discordRes = await axios.post(webhook, payload);
     console.log("Discord message sent:", discordRes.status);
   } catch (err) {
-    console.error("Error:", err.message || err);
+    console.error("Error:", err.response?.data || err.message || err);
     process.exit(1);
   }
 }
