@@ -22,17 +22,17 @@ async function checkLatestTikTok() {
     }
 
     const latestVideo = videos[0];
-    const postLink = `https://vm.tiktokez.com/${latestVideo.aweme_id}`;
+    const username = latestVideo.author?.unique_id;
+    const videoId = latestVideo.video_id;
+    const postLink = `https://tiktokez.com/@${username}/video/${videoId}`;
 
     const message = {
-      content: `[**New TikTok by @${latestVideo.author?.unique_id} 🥹**](${postLink})`,
-      embeds: null,
-      attachments: [],
+      content: `**New TikTok by @${username} 🥹**\n${postLink}`,
     };
 
     await axios.post(webhookUrl, message);
 
-    console.log("✅ Simple message sent to Discord!");
+    console.log("✅ Message sent to Discord!");
   } catch (err) {
     console.error("Error:", err.message);
   }
