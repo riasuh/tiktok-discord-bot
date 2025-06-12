@@ -1,0 +1,27 @@
+name: TikTok Discord Notifier
+
+on:
+  schedule:
+    - cron: '*/5 * * * *'  # runs every 5 minutes
+  workflow_dispatch:       # allows manual trigger in GitHub UI
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Run notifier script
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+          TIKTOK_USERNAME: avamaxsucks
+        run: |
+          npm init -y
+          npm install axios@1.4.0
+          node ./notifier.js
