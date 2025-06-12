@@ -15,13 +15,16 @@ const checkpointFile = path.resolve(__dirname, "lastVideoId.txt");
 
 async function main() {
   try {
-    const res = await axios.get("https://tiktok-scraper7.p.rapidapi.com/user/posts", {
-      params: { user_id: tiktokUserId, count: 1, cursor: 0 },
-      headers: {
-        "x-rapidapi-host": "tiktok-scraper7.p.rapidapi.com",
-        "x-rapidapi-key": rapidApiKey,
-      },
-    });
+const res = await axios.get("https://tiktok-scraper7.p.rapidapi.com/user/posts", {
+  params: { user_id: tiktokUserId, count: 1, cursor: 0 },
+  headers: {
+    "x-rapidapi-host": "tiktok-scraper7.p.rapidapi.com",
+    "x-rapidapi-key": rapidApiKey,
+  },
+});
+
+console.log("DEBUG: Full response data:", JSON.stringify(res.data, null, 2));
+
 
     const videos = res.data.data || [];
     if (!videos.length) {
