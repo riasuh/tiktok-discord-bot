@@ -1,5 +1,8 @@
 name: TikTok to Discord Notifier
 
+permissions:
+  contents: write
+  
 on:
   schedule:
     - cron: '*/1 * * * *'  # every 1 minutes
