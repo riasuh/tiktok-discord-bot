@@ -1,8 +1,10 @@
 const axios = require("axios");
+const fs = require("fs");
 
 const webhookUrl = process.env.DISCORD_WEBHOOK;
 const rapidApiKey = process.env.RAPIDAPI_KEY;
 const tiktokUserId = process.env.TIKTOK_USER_ID;
+const cacheFile = ".last_video";
 
 async function checkLatestTikTok() {
   try {
@@ -15,26 +17,33 @@ async function checkLatestTikTok() {
     });
 
     const videos = res.data?.data?.videos || [];
-
     if (videos.length === 0) {
       console.log("❌ No videos found");
       return;
     }
 
-    const latestVideo = videos[0];
-    const username = latestVideo.author?.unique_id;
-    const videoId = latestVideo.video_id;
-    const postLink = `https://tiktokez.com/@${username}/video/${videoId}`;
+    const latest = videos[0];
+    const videoId = latest.video_id;
+    const username = latest.author?.unique_id;
+    const link = `https://www.tiktok.com/@${username}/video/${videoId}`;
 
-    const message = {
-      content: `[**New TikTok by @${username} 🥹**](${postLink})`,
-    };
+    const lastPosted = fs.existsSync(cacheFile)
+      ? fs.readFileSync(cacheFile, "utf8").trim()
+      : null;
 
-    await axios.post(webhookUrl, message);
+    if (videoId === lastPosted) {
+      console.log("⏩ Already posted.");
+      return;
+    }
 
-    console.log("✅ Message sent to Discord!");
+    await axios.post(webhookUrl, {
+      content: `**New TikTok by @${username} 🥹**\n${link}`,
+    });
+
+    fs.writeFileSync(cacheFile, videoId);
+    console.log("✅ Posted and updated cache.");
   } catch (err) {
-    console.error("Error:", err.message);
+    console.error("❌ Error:", err.message);
   }
 }
 
