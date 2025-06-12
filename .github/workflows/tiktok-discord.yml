@@ -2,7 +2,7 @@ name: TikTok to Discord Notifier
 
 on:
   schedule:
-    - cron: '*/10 * * * *'  # every 10 minutes
+    - cron: '*/1 * * * *'  # every 1 minutes
   workflow_dispatch:       # manual run
   push:
     paths:
