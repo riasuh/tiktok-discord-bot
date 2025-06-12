@@ -1,27 +1,41 @@
-name: TikTok to Discord
+name: TikTok to Discord Notifier
 
 on:
   schedule:
-    - cron: "*/10 * * * *" # every 10 minutes
-  workflow_dispatch:
+    - cron: '*/10 * * * *'  # every 10 minutes
+  workflow_dispatch:       # manual run
+  push:
+    paths:
+      - notifier.js
+      - .last_video
 
 jobs:
   notify:
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout repo
+        uses: actions/checkout@v4
 
       - name: Set up Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: 20
 
-      - run: npm init -y
-      - run: npm install axios@1.4.0
+      - name: Install dependencies
+        run: npm install axios
 
-      - name: Run TikTok notifier
+      - name: Run notifier
         env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
           RAPIDAPI_KEY: ${{ secrets.RAPIDAPI_KEY }}
           TIKTOK_USER_ID: ${{ secrets.TIKTOK_USER_ID }}
         run: node notifier.js
+
+      - name: Commit updated last_video
+        run: |
+          git config user.name github-actions
+          git config user.email github-actions@github.com
+          git add .last_video
+          git diff --cached --quiet || git commit -m "update last_video"
+          git push
