@@ -1,70 +1,50 @@
 const axios = require("axios");
-const fs = require("fs");
-const path = require("path");
 
-const webhook = process.env.DISCORD_WEBHOOK;
+const webhookUrl = process.env.DISCORD_WEBHOOK;
 const rapidApiKey = process.env.RAPIDAPI_KEY;
-const tiktokUserId = process.env.TIKTOK_USER_ID || "107955"; // hardcoded or from env
+const tiktokUserId = process.env.TIKTOK_USER_ID;
 
-if (!webhook || !rapidApiKey || !tiktokUserId) {
-  console.error("Missing env vars: DISCORD_WEBHOOK, RAPIDAPI_KEY, or TIKTOK_USER_ID");
-  process.exit(1);
-}
-
-const checkpointFile = path.resolve(__dirname, "lastVideoId.txt");
-
-async function main() {
+async function checkLatestTikTok() {
   try {
-const res = await axios.get("https://tiktok-scraper7.p.rapidapi.com/user/posts", {
-  params: { user_id: tiktokUserId, count: 1, cursor: 0 },
-  headers: {
-    "x-rapidapi-host": "tiktok-scraper7.p.rapidapi.com",
-    "x-rapidapi-key": rapidApiKey,
-  },
-});
+    const res = await axios.get("https://tiktok-scraper7.p.rapidapi.com/user/posts", {
+      params: { user_id: tiktokUserId, count: 1, cursor: 0 },
+      headers: {
+        "x-rapidapi-host": "tiktok-scraper7.p.rapidapi.com",
+        "x-rapidapi-key": rapidApiKey,
+      },
+    });
 
-console.log("DEBUG: Full response data:", JSON.stringify(res.data, null, 2));
+    const videos = res.data?.data?.videos || [];
 
-
-    const videos = res.data.data || [];
-    if (!videos.length) {
-      console.log("No videos found");
+    if (videos.length === 0) {
+      console.log("❌ No videos found");
       return;
     }
 
-    const video = videos[0];
-    const videoId = video.id;
-    const proxyLink = `https://vm.tiktokez.com/${videoId}`;
+    const latestVideo = videos[0];
+    const postLink = `https://vm.tiktokez.com/${latestVideo.aweme_id}`;
 
-    let lastVideoId = null;
-    try {
-      lastVideoId = fs.readFileSync(checkpointFile, "utf8");
-    } catch (err) {}
+    console.log(`✅ Found video: ${postLink}`);
 
-    if (lastVideoId === videoId) {
-      console.log("No new video, skipping.");
-      return;
-    }
-
-    fs.writeFileSync(checkpointFile, videoId, "utf8");
-
-    const payload = {
+    await axios.post(webhookUrl, {
       embeds: [
         {
-          title: `🎬 New TikTok Posted`,
-          description: `[Click to Watch](${proxyLink})`,
-          color: 0xff0050,
-          footer: { text: "Posted by TikTok Bot" },
+          title: latestVideo.title || "New TikTok Post",
+          url: postLink,
+          image: {
+            url: latestVideo.cover,
+          },
+          footer: {
+            text: `Posted by ${latestVideo.author?.unique_id}`,
+          },
         },
       ],
-    };
+    });
 
-    await axios.post(webhook, payload);
-    console.log("✅ Sent to Discord!");
-  } catch (error) {
-    console.error("❌ Error:", error.response?.data || error.message);
-    process.exit(1);
+    console.log("✅ Message sent to Discord!");
+  } catch (err) {
+    console.error("Error:", err.message);
   }
 }
 
-main();
+checkLatestTikTok();
