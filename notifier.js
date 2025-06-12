@@ -27,7 +27,7 @@ async function checkLatestTikTok() {
     const postLink = `https://tiktokez.com/@${username}/video/${videoId}`;
 
     const message = {
-      content: `**New TikTok by @${username} 🥹**\n${postLink}`,
+      content: `[**New TikTok by @${username} 🥹**](${postLink})`,
     };
 
     await axios.post(webhookUrl, message);
