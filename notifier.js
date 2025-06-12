@@ -25,7 +25,7 @@ async function checkLatestTikTok() {
     const latest = videos[0];
     const videoId = latest.video_id;
     const username = latest.author?.unique_id;
-    const link = `https://www.tiktok.com/@${username}/video/${videoId}`;
+    const link = `https://tiktokez.com/@${username}/video/${videoId}`;
 
     const lastPosted = fs.existsSync(cacheFile)
       ? fs.readFileSync(cacheFile, "utf8").trim()
@@ -37,7 +37,7 @@ async function checkLatestTikTok() {
     }
 
     await axios.post(webhookUrl, {
-      content: `**New TikTok by @${username} 🥹**\n${link}`,
+      content: `[**New TikTok by @${username} 🥹**](${link})`,
     });
 
     fs.writeFileSync(cacheFile, videoId);
